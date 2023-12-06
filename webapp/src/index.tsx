@@ -8,7 +8,9 @@ import './index.css';
 import { AuthConfig, AuthHelper } from './libs/auth/AuthHelper';
 import { store } from './redux/app/store';
 
+import * as microsoftTeams from '@microsoft/teams-js';
 import React from 'react';
+import { TeamsAuthHelper } from './libs/auth/TeamsAuthHelper';
 import { BackendServiceUrl } from './libs/services/BaseService';
 import { setAuthConfig } from './redux/features/app/appSlice';
 
@@ -35,30 +37,58 @@ document.addEventListener('DOMContentLoaded', () => {
 export function renderApp() {
     fetch(new URL('authConfig', BackendServiceUrl))
         .then((response) => (response.ok ? (response.json() as Promise<AuthConfig>) : Promise.reject()))
-        .then((authConfig) => {
+        .then(async (authConfig) => {
             store.dispatch(setAuthConfig(authConfig));
 
             if (AuthHelper.isAuthAAD()) {
-                if (!msalInstance) {
-                    msalInstance = new PublicClientApplication(AuthHelper.getMsalConfig(authConfig));
-                    void msalInstance.handleRedirectPromise().then((response) => {
-                        if (response) {
-                            msalInstance?.setActiveAccount(response.account);
-                        }
-                    });
-                }
+                console.log('AAD Auth Enabled');
 
-                // render with the MsalProvider if AAD is enabled
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                root!.render(
-                    <React.StrictMode>
-                        <ReduxProvider store={store}>
-                            <MsalProvider instance={msalInstance}>
+                //get window.location urllogin.microsoftonline.com
+                const url = new URL(window.location.href);
+                console.log('url: ${ url }');
+                //get params from url
+                const params = new URLSearchParams(url.search);
+                console.log('inTeams: ${params}');
+                if (params.get('inTeams')) {
+                    // const appExpress: any = express();
+                    //  setup(appExpress);
+
+                    // Initialize the Microsoft Teams SDK
+                    void microsoftTeams.app.initialize();
+                    console.log('I am in teams auth');
+                    //sso.tsinTeams
+                    await TeamsAuthHelper.ssoAuth();
+                    // render with the Teams auth if AAD is enabled
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    root!.render(
+                        <React.StrictMode>
+                            <ReduxProvider store={store}>
                                 <App />
-                            </MsalProvider>
-                        </ReduxProvider>
-                    </React.StrictMode>,
-                );
+                            </ReduxProvider>
+                        </React.StrictMode>,
+                    );
+                } else {
+                    if (!msalInstance) {
+                        msalInstance = new PublicClientApplication(AuthHelper.getMsalConfig(authConfig));
+                        void msalInstance.handleRedirectPromise().then((response) => {
+                            if (response) {
+                                msalInstance?.setActiveAccount(response.account);
+                            }
+                        });
+                    }
+
+                    // render with the MsalProvider if AAD is enabled
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    root!.render(
+                        <React.StrictMode>
+                            <ReduxProvider store={store}>
+                                <MsalProvider instance={msalInstance}>
+                                    <App />
+                                </MsalProvider>
+                            </ReduxProvider>
+                        </React.StrictMode>,
+                    );
+                }
             }
         })
         .catch(() => {

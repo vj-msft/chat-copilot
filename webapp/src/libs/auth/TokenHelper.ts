@@ -4,8 +4,8 @@ import {
     InteractionStatus,
     PopupRequest,
 } from '@azure/msal-browser';
+import * as microsoftTeams from '@microsoft/teams-js';
 import { AuthHelper } from './AuthHelper';
-
 enum TokenErrors {
     InteractionInProgress = 'interaction_in_progress',
 }
@@ -20,23 +20,41 @@ export const getAccessTokenUsingMsal = async (
     scopes: string[],
     extraScopesToConsent?: string[],
 ) => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const account = msalInstance.getActiveAccount()!;
-    const authority = AuthHelper.getAuthConfig()?.aadAuthority;
-    const accessTokenRequest: PopupRequest = {
-        authority,
-        scopes,
-        extraScopesToConsent,
-        account,
-    };
+        if (window.location.href.includes('teams')) {
 
-    return await acquireToken(accessTokenRequest, msalInstance, inProgress).catch(async (e) => {
-        if (e instanceof Error && e.message === (TokenErrors.InteractionInProgress as string)) {
-            return await interactionInProgressHandler(inProgress, msalInstance, accessTokenRequest);
+            await microsoftTeams.app.initialize();
+            // Check if Teams has a cached server-side token
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const teamsToken = await microsoftTeams.authentication.authenticate({
+                url: window.location.origin + '/TeamsAuthEnd',
+                width: 600,
+                height: 535,
+            });
+
+            if (teamsToken && teamsToken.length > 0) {
+                return teamsToken;
+            }
         }
+        else {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const account = msalInstance.getActiveAccount()!;
+            const authority = AuthHelper.getAuthConfig()?.aadAuthority;
+            const accessTokenRequest: PopupRequest = {
+                authority,
+                scopes,
+                extraScopesToConsent,
+                account,
+            };
 
-        throw e;
-    });
+            return await acquireToken(accessTokenRequest, msalInstance, inProgress).catch(async (e) => {
+                if (e instanceof Error && e.message === (TokenErrors.InteractionInProgress as string)) {
+                    return await interactionInProgressHandler(inProgress, msalInstance, accessTokenRequest);
+                }
+
+                throw e;
+            });
+        }
+    return '';
 };
 
 const acquireToken = async (

@@ -16,6 +16,7 @@ import { RootState } from './redux/app/store';
 import { FeatureKeys } from './redux/features/app/AppState';
 import { addAlert, setActiveUserInfo, setServiceInfo } from './redux/features/app/appSlice';
 import { semanticKernelDarkTheme, semanticKernelLightTheme } from './styles';
+import { TeamsAuthHelper } from './libs/auth/TeamsAuthHelper';
 
 export const useClasses = makeStyles({
     container: {
@@ -66,6 +67,17 @@ const App = () => {
     const { instance, inProgress } = useMsal();
     const { features, isMaintenance } = useAppSelector((state: RootState) => state.app);
     const isAuthenticated = useIsAuthenticated();
+    let isTeamsAuthenticatedValue = false;
+    const isTeamsAuthenticated = () => {
+        TeamsAuthHelper.isTeamsAuthenticated()
+            .then((result) => {
+                isTeamsAuthenticatedValue = result;
+            })
+            .catch((error) => {
+                console.error('Error checking Teams authentication:', error);
+            });
+        return isTeamsAuthenticatedValue;
+    };
 
     const chat = useChat();
     const file = useFile();
@@ -76,7 +88,7 @@ const App = () => {
             return;
         }
 
-        if (isAuthenticated && appState === AppState.SettingUserInfo) {
+        if ((isAuthenticated || isTeamsAuthenticated()) && appState === AppState.SettingUserInfo) {
             const account = instance.getActiveAccount();
             if (!account) {
                 setAppState(AppState.ErrorLoadingUserInfo);
