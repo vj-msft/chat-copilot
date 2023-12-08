@@ -20,9 +20,13 @@ export const getClientSideToken = (): Promise<string> => {
 };
 
 export const isTeamsAuthenticated = async (): Promise<boolean> => {
+   console.log('isTeamsAuthenticated reached');
     let token = false;
     try {
-        await getClientSideToken().then((result) => (token = !!result));
+        await microsoftTeams.app.initialize();
+        const result = await getClientSideToken();
+        token = !!result;
+
     } catch (error) {
         console.error('Error checking Teams authentication:', error);
     }
@@ -31,7 +35,7 @@ export const isTeamsAuthenticated = async (): Promise<boolean> => {
 
 // 2. Exchange that token for a token with the required permissions
 //    using the web service (see /auth/token handler in app.js)
-export const getServerSideToken = async (clientSideToken: string): Promise<any> => {
+export const getServerSideToken = async (clientSideToken: string): Promise<string> => {
     try {
         const context = await microsoftTeams.app.getContext();
         if (context.user?.tenant) {

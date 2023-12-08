@@ -8,9 +8,7 @@ import './index.css';
 import { AuthConfig, AuthHelper } from './libs/auth/AuthHelper';
 import { store } from './redux/app/store';
 
-import * as microsoftTeams from '@microsoft/teams-js';
 import React from 'react';
-import { TeamsAuthHelper } from './libs/auth/TeamsAuthHelper';
 import { BackendServiceUrl } from './libs/services/BaseService';
 import { setAuthConfig } from './redux/features/app/appSlice';
 
@@ -37,36 +35,24 @@ document.addEventListener('DOMContentLoaded', () => {
 export function renderApp() {
     fetch(new URL('authConfig', BackendServiceUrl))
         .then((response) => (response.ok ? (response.json() as Promise<AuthConfig>) : Promise.reject()))
-        .then(async (authConfig) => {
+        .then( (authConfig) => {
             store.dispatch(setAuthConfig(authConfig));
 
             if (AuthHelper.isAuthAAD()) {
-                console.log('AAD Auth Enabled');
-
                 //get window.location urllogin.microsoftonline.com
                 const url = new URL(window.location.href);
-                console.log('url: ${ url }');
                 //get params from url
                 const params = new URLSearchParams(url.search);
-                console.log('inTeams: ${params}');
                 if (params.get('inTeams')) {
                     // const appExpress: any = express();
                     //  setup(appExpress);
-
                     // Initialize the Microsoft Teams SDK
-                    void microsoftTeams.app.initialize();
-                    console.log('I am in teams auth');
+                    // void microsoftTeams.app.initialize();
+                      console.log('I am in teams auth index');
                     //sso.tsinTeams
-                    await TeamsAuthHelper.ssoAuth();
+                    //  await TeamsAuthHelper.ssoAuth();
                     // render with the Teams auth if AAD is enabled
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    root!.render(
-                        <React.StrictMode>
-                            <ReduxProvider store={store}>
-                                <App />
-                            </ReduxProvider>
-                        </React.StrictMode>,
-                    );
                 } else {
                     if (!msalInstance) {
                         msalInstance = new PublicClientApplication(AuthHelper.getMsalConfig(authConfig));
