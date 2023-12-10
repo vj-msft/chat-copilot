@@ -104,7 +104,12 @@ const logoutAsync = (instance: IPublicClientApplication) => {
 
 const getAuthConfig = () => store.getState().app.authConfig;
 const isAuthAAD = () => getAuthConfig()?.authType === AuthType.AAD;
-
+const isTeams = () => {
+    const url = new URL(window.location.href);
+    //get params from url
+    const params = new URLSearchParams(url.search);
+    return params.get('inTeams');
+};
 // SKaaS = Semantic Kernel as a Service
 // Gets token with scopes to authorize SKaaS specifically
 const getSKaaSAccessToken = async (instance: IPublicClientApplication, inProgress: InteractionStatus) => {
@@ -121,4 +126,5 @@ export const AuthHelper = {
     logoutAsync,
     isAuthAAD,
     getAuthConfig,
+    isTeams,
 };

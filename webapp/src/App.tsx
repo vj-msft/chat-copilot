@@ -6,8 +6,11 @@ import { FluentProvider, Subtitle1, makeStyles, shorthands, tokens } from '@flue
 import * as microsoftTeams from '@microsoft/teams-js';
 import * as React from 'react';
 import { useEffect } from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { UserSettingsMenu } from './components/header/UserSettingsMenu';
 import { PluginGallery } from './components/open-api-plugins/PluginGallery';
+import CloseConsentPopup from './components/utils/CloseConsentPopup';
+import ConsentPopup from './components/utils/ConsentPopup';
 import { BackendProbe, ChatView, Error, Loading, Login } from './components/views';
 import { AuthHelper } from './libs/auth/AuthHelper';
 import { TeamsAuthHelper } from './libs/auth/TeamsAuthHelper';
@@ -18,8 +21,6 @@ import { RootState } from './redux/app/store';
 import { FeatureKeys } from './redux/features/app/AppState';
 import { addAlert, setActiveUserInfo, setServiceInfo } from './redux/features/app/appSlice';
 import { semanticKernelDarkTheme, semanticKernelLightTheme } from './styles';
-//import { setup } from './libs/auth/TeamsAuthServer';
-//import express from 'express';
 
 export const useClasses = makeStyles({
     container: {
@@ -71,31 +72,30 @@ const App = () => {
     const { features, isMaintenance } = useAppSelector((state: RootState) => state.app);
     const isAuthenticated = useIsAuthenticated();
 
-    const isTeamsAuthenticated = async () => {
+    const isTeamsAuthenticated = () => {
         try {
-            const result = await TeamsAuthHelper.isTeamsAuthenticated();
-            console.log('Am i in the right place');
-            console.log(result);
-            return result;
+            const teamsAuthenticated = TeamsAuthHelper.isTeamsAuthenticated().then((result) => {
+                return result;
+            });
+            return teamsAuthenticated;
         } catch (error) {
             console.error('Error checking Teams authentication:', error);
             return false;
         }
     };
 
-   // const isTeamsAuthenticatedValue = isTeamsAuthenticated();
+    const teamsAuthenticated = isTeamsAuthenticated();
 
     async function teamsUserContext() {
         try {
             console.log('teamsUserContext');
             const context = await microsoftTeams.app.getContext();
             //check if context.user is null
-
             if (context.user) {
                 return {
                     tid: context.user.tenant?.id,
                     email: context.user.userPrincipalName,
-                    name: context.user.displayName?context.user.displayName:context.user.userPrincipalName,
+                    name: context.user.displayName ? context.user.displayName : context.user.userPrincipalName,
                 };
             } else {
                 return null; // Handle the case when context.user is null
@@ -110,24 +110,13 @@ const App = () => {
     const file = useFile();
 
     useEffect(() => {
-        console.log('useEffect');
-
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const fetchData = async () => {
-
+        const fetchData =  () => {
             console.log('fetchData called');
             if (isMaintenance && appState !== AppState.ProbeForBackend) {
                 setAppState(AppState.ProbeForBackend);
                 return;
             }
-            const teamsAuthenticated = await isTeamsAuthenticated();
-            console.log(`the teamsAuthenticated is ${teamsAuthenticated}`);
-            if (teamsAuthenticated) {
-                // Add the route for handling tabs
-              //  const expressApp = express();
-               // setup(expressApp);
-            }
-
             if ((isAuthenticated || teamsAuthenticated) && appState === AppState.SettingUserInfo) {
                 console.log('SettingUserInfo');
                 const account = instance.getActiveAccount();
@@ -218,27 +207,33 @@ const App = () => {
 
     const content = <Chat classes={classes} appState={appState} setAppState={setAppState} />;
     return (
-        <FluentProvider
-            className="app-container"
-            theme={features[FeatureKeys.DarkMode].enabled ? semanticKernelDarkTheme : semanticKernelLightTheme}
-        >
-            {AuthHelper.isAuthAAD() && isAuthenticated? (
-                <>
-                    <UnauthenticatedTemplate>
-                        <div className={classes.container}>
-                            <div className={classes.header}>
-                                <Subtitle1 as="h1">Chat Copilot</Subtitle1>
+        <BrowserRouter>
+            <FluentProvider
+                className="app-container"
+                theme={features[FeatureKeys.DarkMode].enabled ? semanticKernelDarkTheme : semanticKernelLightTheme}
+            >
+                {AuthHelper.isAuthAAD() && !AuthHelper.isTeams() ? (
+                    <>
+                        <UnauthenticatedTemplate>
+                            <div className={classes.container}>
+                                <div className={classes.header}>
+                                    <Subtitle1 as="h1">Chat Copilot</Subtitle1>
+                                </div>
+                                {appState === AppState.SigningOut && <Loading text="Signing you out..." />}
+                                {appState !== AppState.SigningOut && <Login />}
                             </div>
-                            {appState === AppState.SigningOut && <Loading text="Signing you out..." />}
-                            {appState !== AppState.SigningOut && <Login />}
-                        </div>
-                    </UnauthenticatedTemplate>
-                    <AuthenticatedTemplate>{content}</AuthenticatedTemplate>
-                </>
-            ) : (
-                content
-            )}
-        </FluentProvider>
+                        </UnauthenticatedTemplate>
+                        <AuthenticatedTemplate>{content}</AuthenticatedTemplate>
+                    </>
+                ) : (
+                    content
+                )}
+            </FluentProvider>
+            <Routes>
+                <Route path="/auth-start" Component={ConsentPopup} />
+                <Route path="/auth-end" Component={CloseConsentPopup} />
+            </Routes>
+        </BrowserRouter>
     );
 };
 
@@ -268,11 +263,13 @@ const Chat = ({
                     <div className={classes.cornerItems}>
                         <div className={classes.cornerItems}>
                             <PluginGallery />
-                            <UserSettingsMenu
-                                setLoadingState={() => {
-                                    setAppState(AppState.SigningOut);
-                                }}
-                            />
+                            {!AuthHelper.isTeams() && (
+                                <UserSettingsMenu
+                                    setLoadingState={() => {
+                                        setAppState(AppState.SigningOut);
+                                    }}
+                                />
+                            )}
                         </div>
                     </div>
                 )}

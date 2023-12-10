@@ -4,9 +4,8 @@ import {
     InteractionStatus,
     PopupRequest,
 } from '@azure/msal-browser';
-import * as microsoftTeams from '@microsoft/teams-js';
 import { AuthHelper } from './AuthHelper';
-import { getClientSideToken, getServerSideToken } from './TeamsAuthHelper';
+import { TeamsAuthHelper } from './TeamsAuthHelper';
 enum TokenErrors {
     InteractionInProgress = 'interaction_in_progress',
 }
@@ -24,18 +23,11 @@ export const getAccessTokenUsingMsal = async (
     const url = new URL(window.location.href);
     //get params from url
     const params = new URLSearchParams(url.search);
-    if (params.get('inTeams')) {
-        await microsoftTeams.app.initialize();
-        const teamsAuthToken: string = await getClientSideToken();
-
-
-        if (teamsAuthToken && teamsAuthToken.length > 0) {
-            console.log(`I am in teams token ${teamsAuthToken}`);
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const teamsAccessToken: string = await getServerSideToken(teamsAuthToken);
-            return teamsAccessToken;
-        }
-    } else {
+     if (params.get('inTeams')) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-non-null-assertion
+        const teamsAccessToken =  await TeamsAuthHelper.ssoAuth();
+        return teamsAccessToken;
+     } else {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const account = msalInstance.getActiveAccount()!;
         const authority = AuthHelper.getAuthConfig()?.aadAuthority;
@@ -54,7 +46,6 @@ export const getAccessTokenUsingMsal = async (
             throw e;
         });
     }
-    return '';
 };
 
 const acquireToken = async (

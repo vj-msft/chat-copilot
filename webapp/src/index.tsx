@@ -37,23 +37,7 @@ export function renderApp() {
         .then((response) => (response.ok ? (response.json() as Promise<AuthConfig>) : Promise.reject()))
         .then( (authConfig) => {
             store.dispatch(setAuthConfig(authConfig));
-
-            if (AuthHelper.isAuthAAD()) {
-                //get window.location urllogin.microsoftonline.com
-                const url = new URL(window.location.href);
-                //get params from url
-                const params = new URLSearchParams(url.search);
-                if (params.get('inTeams')) {
-                    // const appExpress: any = express();
-                    //  setup(appExpress);
-                    // Initialize the Microsoft Teams SDK
-                    // void microsoftTeams.app.initialize();
-                      console.log('I am in teams auth index');
-                    //sso.tsinTeams
-                    //  await TeamsAuthHelper.ssoAuth();
-                    // render with the Teams auth if AAD is enabled
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                } else {
+            if (AuthHelper.isAuthAAD() && !AuthHelper.isTeams()) {
                     if (!msalInstance) {
                         msalInstance = new PublicClientApplication(AuthHelper.getMsalConfig(authConfig));
                         void msalInstance.handleRedirectPromise().then((response) => {
@@ -75,7 +59,6 @@ export function renderApp() {
                         </React.StrictMode>,
                     );
                 }
-            }
         })
         .catch(() => {
             store.dispatch(setAuthConfig(undefined));

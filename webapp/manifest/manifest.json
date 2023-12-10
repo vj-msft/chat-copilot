@@ -1,0 +1,47 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "1.0.0",
+  "id": "c209a9b2-7e7d-4d85-8455-1a1690bed8cd",
+  "packageName": "com.cc.teamsauthsso",
+  "developer": {
+    "name": "Microsoft",
+    "websiteUrl": "https://8449-86-20-192-252.ngrok-free.app",
+    "privacyUrl": "https://8449-86-20-192-252.ngrok-free.app",
+    "termsOfUseUrl": "https://8449-86-20-192-252.ngrok-free.app"
+  },
+  "name": {
+    "short": "Tab CC Auth SSO",
+    "full": "Tab CC Auth SSO"
+  },
+  "description": {
+    "short": "Tab Auth  CC SSO app",
+    "full": "This sample shows sso authentication for tab CC."
+  },
+  "icons": {
+    "outline": "outline.png",
+    "color": "color.png"
+  },
+  "accentColor": "#60A18E",
+  "staticTabs": [
+    {
+      "entityId": "auth",
+      "name": "Auth",
+      "contentUrl": "https://8449-86-20-192-252.ngrok-free.app/?inTeams=true",
+      "scopes": [
+        "personal"
+      ]
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "8449-86-20-192-252.ngrok-free.app"
+  ],
+  "webApplicationInfo": {
+    "id": "0e730660-a590-40ae-9974-35f1b95ced0f",
+    "resource": "api://8449-86-20-192-252.ngrok-free.app/0e730660-a590-40ae-9974-35f1b95ced0f"
+  }
+}
