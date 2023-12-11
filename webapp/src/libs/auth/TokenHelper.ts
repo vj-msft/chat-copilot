@@ -20,12 +20,9 @@ export const getAccessTokenUsingMsal = async (
     scopes: string[],
     extraScopesToConsent?: string[],
 ) => {
-    const url = new URL(window.location.href);
-    //get params from url
-    const params = new URLSearchParams(url.search);
-     if (params.get('inTeams')) {
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-non-null-assertion
-        const teamsAccessToken =  await TeamsAuthHelper.ssoAuth();
+     if (AuthHelper.isTeams()) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+        const teamsAccessToken:string =  await TeamsAuthHelper.ssoAuth() as string;
         return teamsAccessToken;
      } else {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

@@ -84,7 +84,7 @@ const App = () => {
         }
     };
 
-    const teamsAuthenticated = isTeamsAuthenticated();
+    const teamsAuthenticated = AuthHelper.isTeams()? isTeamsAuthenticated(): false;
 
     async function teamsUserContext() {
         try {

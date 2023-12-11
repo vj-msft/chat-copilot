@@ -33,11 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 export function renderApp() {
-    fetch(new URL('authConfig', BackendServiceUrl))
+    const isTeamsOrigin = AuthHelper.isTeams();
+    const authConfigParam = isTeamsOrigin ? 'authConfig?isTeams= true' : 'authConfig?isTeams=false';
+    fetch(new URL(authConfigParam, BackendServiceUrl))
         .then((response) => (response.ok ? (response.json() as Promise<AuthConfig>) : Promise.reject()))
         .then( (authConfig) => {
             store.dispatch(setAuthConfig(authConfig));
-            if (AuthHelper.isAuthAAD() && !AuthHelper.isTeams()) {
+            if (AuthHelper.isAuthAAD() && !isTeamsOrigin) {
                     if (!msalInstance) {
                         msalInstance = new PublicClientApplication(AuthHelper.getMsalConfig(authConfig));
                         void msalInstance.handleRedirectPromise().then((response) => {
